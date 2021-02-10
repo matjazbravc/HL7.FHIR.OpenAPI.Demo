@@ -3,8 +3,7 @@
 
 ## Introduction
 When adopting FHIR, a common scenario is needing to convert your existing data into the FHIR model. For this demo, we will be building a OpenAPI which maps custom EHRs into FHIR Patient and Observation resources. Other resources were not implemented (yet).
-For this purpose we will use the [.NET 5](https://dotnet.microsoft.com/download/dotnet/5.0) and [Firely .NET SDK](https://fire.ly/products/firely-net-sdk/).
-For a server we will use public FHIR server [UHN_HAPI Server](http://hapi.fhir.org) (R4) which is regularly purged and reloaded with fixed test data.
+For this purpose we will use the [.NET 5](https://dotnet.microsoft.com/download/dotnet/5.0),  [Firely .NET SDK](https://fire.ly/products/firely-net-sdk/) and public FHIR server [UHN_HAPI Server](http://hapi.fhir.org) (R4) which is regularly purged and reloaded with fixed test data.
 
 ![](res/hapi-fhir.png)
 
