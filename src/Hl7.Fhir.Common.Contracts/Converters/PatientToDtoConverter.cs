@@ -64,9 +64,9 @@ namespace Hl7.Fhir.Common.Contracts.Converters
             {
                 Id = patient.Id,
                 Identifier = patient.Identifier?.FirstOrDefault().Value,
-                Prefix = firstName.Prefix?.FirstOrDefault(),
-                FirstName = firstName.Given.FirstOrDefault(),
-                LastName = firstName.Family,
+                Prefix = firstName?.Prefix?.FirstOrDefault(),
+                FirstName = firstName?.Given.FirstOrDefault(),
+                LastName = firstName?.Family,
                 BirthDate = patient.BirthDate,
                 BirthPlace = birthPlace,
                 Citizenship = citizenship,
