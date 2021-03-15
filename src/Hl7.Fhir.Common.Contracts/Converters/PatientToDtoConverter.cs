@@ -60,10 +60,17 @@ namespace Hl7.Fhir.Common.Contracts.Converters
                     "Postal";
             }
 
+            var gender = "Unknown";
+            if (patient.Gender != null)
+            {
+                gender = patient.Gender == AdministrativeGender.Female ? "Female" :
+                    patient.Gender == AdministrativeGender.Male ? "Male" : "Unknown";
+            }
+
             var patientDto = new PatientDetailDto
             {
                 Id = patient.Id,
-                Identifier = patient.Identifier?.FirstOrDefault().Value,
+                Identifier = patient.Identifier?.FirstOrDefault()?.Value,
                 Prefix = firstName?.Prefix?.FirstOrDefault(),
                 FirstName = firstName?.Given.FirstOrDefault(),
                 LastName = firstName?.Family,
@@ -71,9 +78,7 @@ namespace Hl7.Fhir.Common.Contracts.Converters
                 BirthPlace = birthPlace,
                 Citizenship = citizenship,
                 CitizenshipCode = citizenshipCode,
-                Gender = patient.Gender == AdministrativeGender.Female ? "Female" :
-                    patient.Gender == AdministrativeGender.Male ? "Male" :
-                    "Unknown",
+                Gender = gender,
                 Address = address
             };
             return patientDto;
