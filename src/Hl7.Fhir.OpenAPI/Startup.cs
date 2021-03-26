@@ -166,6 +166,7 @@ namespace Hl7.Fhir.OpenAPI
             services.AddTransient<IPatientService, PatientService>();
             services.AddTransient<IObservationService, ObservationService>();
             services.AddTransient<IMedicationService, MedicationService>();
+            services.AddTransient<IOrganizationService, OrganizationService>();
 
             services.AddSingleton<IFhirService, FhirService>();
             services.AddSingleton<ICitizenshipService, CitizenshipService>();
