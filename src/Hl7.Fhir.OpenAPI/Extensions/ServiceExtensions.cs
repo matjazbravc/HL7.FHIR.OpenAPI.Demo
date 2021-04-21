@@ -1,17 +1,17 @@
-﻿using Hl7.Fhir.OpenAPI.Middleware;
+﻿using Hl7.Fhir.OpenAPI.Filters;
+using Hl7.Fhir.OpenAPI.Middleware;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Mvc.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.PlatformAbstractions;
+using Microsoft.OpenApi.Any;
+using Microsoft.OpenApi.Interfaces;
 using Microsoft.OpenApi.Models;
+using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System;
-using Hl7.Fhir.OpenAPI.Filters;
-using System.Collections.Generic;
-using Microsoft.OpenApi.Interfaces;
-using Microsoft.OpenApi.Any;
 
 namespace Hl7.Fhir.OpenAPI.Extensions
 {
@@ -67,10 +67,6 @@ namespace Hl7.Fhir.OpenAPI.Extensions
                 {
                     var actionApiVersionModel = apiDesc.ActionDescriptor.GetApiVersionModel();
                     // Would mean this action is unversioned and should be included everywhere
-                    if (actionApiVersionModel == null)
-                    {
-                        return true;
-                    }
                     return actionApiVersionModel.DeclaredApiVersions.Any() ? actionApiVersionModel.DeclaredApiVersions.Any(v => $"v{v}" == docName) : actionApiVersionModel.ImplementedApiVersions.Any(v => $"v{v.ToString()}" == docName);
                 });
                 if (includeXmlDocumentation)

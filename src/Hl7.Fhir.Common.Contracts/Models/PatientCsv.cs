@@ -2,9 +2,6 @@
 {
     public class PatientCsv : PatientBase
     {
-        public PatientCsv()
-        { }
-
         // Header:
         // Nr,Prefix,Identifier,FirstName,LastName,BirthDate,BirthPlace,CitizenshipCode,Gender,AddressStreetName,AddressStreetNo,AddressAppartmentNo,AddressPostalCode,AddressCity,AddressCountry,AddressType
         public string Nr { get; set; }

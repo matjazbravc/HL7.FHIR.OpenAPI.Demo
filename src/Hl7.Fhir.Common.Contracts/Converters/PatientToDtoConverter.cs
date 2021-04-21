@@ -24,7 +24,7 @@ namespace Hl7.Fhir.Common.Contracts.Converters
 
             // BirthPlace Extension
             var birthPlace = string.Empty;
-            var birthPlaceExtension = patient.Extension.Where(ext => ext.Url.EndsWith("patient-birthPlace")).FirstOrDefault();
+            var birthPlaceExtension = patient.Extension.FirstOrDefault(ext => ext.Url.EndsWith("patient-birthPlace"));
             if (birthPlaceExtension != null)
             {
                 birthPlace = ((Address)birthPlaceExtension.Value).City;
@@ -33,16 +33,13 @@ namespace Hl7.Fhir.Common.Contracts.Converters
             // Citizenship Extension
             var citizenship = string.Empty;
             var citizenshipCode = string.Empty;
-            var citizenshipExtension = patient.Extension.Where(ext => ext.Url.EndsWith("patient-citizenship")).FirstOrDefault();
-            if (citizenshipExtension != null)
+            var citizenshipExtension = patient.Extension.FirstOrDefault(ext => ext.Url.EndsWith("patient-citizenship"));
+            var codeExt = citizenshipExtension?.Extension.FirstOrDefault(ext => ext.Url.Equals("code"));
+            if (codeExt != null)
             {
-                var codeExt = citizenshipExtension.Extension.Where(ext => ext.Url.Equals("code")).FirstOrDefault();
-                if (codeExt != null)
-                {
-                    var citizenshipConcept = (CodeableConcept)codeExt.Value;
-                    citizenship = citizenshipConcept.Coding.FirstOrDefault().Display;
-                    citizenshipCode = citizenshipConcept.Coding.FirstOrDefault().Code;
-                }
+                var citizenshipConcept = (CodeableConcept)codeExt.Value;
+                citizenship = citizenshipConcept.Coding.FirstOrDefault()?.Display;
+                citizenshipCode = citizenshipConcept.Coding.FirstOrDefault()?.Code;
             }
 
             var firstName = patient.Name.FirstOrDefault();
@@ -55,9 +52,8 @@ namespace Hl7.Fhir.Common.Contracts.Converters
                 address.City = firstAddress.City;
                 address.Country = firstAddress.Country;
                 address.Line = firstAddress.Line?.ToArray();
-                address.Type = firstAddress.Type == Address.AddressType.Both ? "Both" :
-                    firstAddress.Type == Address.AddressType.Physical ? "Physical" :
-                    "Postal";
+                address.Type = firstAddress.Type == Address.AddressType.Both ? "Both" : 
+                    firstAddress.Type == Address.AddressType.Physical ? "Physical" : "Postal";
             }
 
             var gender = "Unknown";

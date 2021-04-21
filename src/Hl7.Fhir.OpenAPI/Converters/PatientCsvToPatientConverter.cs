@@ -40,7 +40,8 @@ namespace Hl7.Fhir.OpenAPI.Converters
                 Id = id,
                 Active = true,
                 Identifier = new List<Identifier> {
-                    new Identifier {
+                    new()
+                    {
                         System = "http://acme.org/patient-ids",
                         Value = patient.Identifier
                     }
@@ -51,9 +52,9 @@ namespace Hl7.Fhir.OpenAPI.Converters
                     AdministrativeGender.Unknown,
                 Name = new List<HumanName>
                 {
-                    new HumanName
+                    new()
                     {
-                        Prefix = new string[] {
+                        Prefix = new[] {
                             patient.Prefix
                         },
                         Family = patient.LastName,
@@ -66,7 +67,7 @@ namespace Hl7.Fhir.OpenAPI.Converters
                 BirthDate = patient.BirthDate,
                 Address = new List<Address>()
                 {
-                    new Address
+                    new()
                     {
                         City = patient.AddressCity,
                         Country = patient.AddressCountry,
@@ -100,12 +101,12 @@ namespace Hl7.Fhir.OpenAPI.Converters
                     Url = "http://hl7.org/fhir/StructureDefinition/patient-citizenship",
                     Extension = new List<Extension>()
                     {
-                        new Extension("code",
+                        new("code",
                             new CodeableConcept()
                             {
                                 Coding = new List<Coding>
                                 {
-                                    new Coding
+                                    new()
                                     {
                                         Code = citizenship.Code,
                                         Display = citizenship.Explanation,
@@ -114,7 +115,7 @@ namespace Hl7.Fhir.OpenAPI.Converters
                                 },
                             }
                         ),
-                        new Extension("period",
+                        new("period",
                             new Period
                             {
                                 Start = citizenshipStart.ToString("yyyy-MM-dd")

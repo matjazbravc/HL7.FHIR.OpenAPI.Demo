@@ -35,7 +35,7 @@ namespace Hl7.Fhir.OpenAPI.Services
             Citizenship result = null;
             if (string.IsNullOrWhiteSpace(code))
             {
-                return result;
+                return null;
             }
             if (Citizenships.ContainsKey(code))
             {

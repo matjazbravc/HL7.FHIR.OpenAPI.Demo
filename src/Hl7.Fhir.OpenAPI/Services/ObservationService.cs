@@ -14,14 +14,12 @@ namespace Hl7.Fhir.OpenAPI.Services
     {
         private readonly FhirClient _fhirClient;
         private readonly FhirOptions _fhirOptions;
-        private readonly IFhirService _fhirService;
 
         public ObservationService(IFhirService fhirService, IOptions<FhirOptions> fhirOptions)
         {
-            _fhirService = fhirService;
             _fhirOptions = fhirOptions.Value;
-            _fhirService.Initialize();
-            _fhirClient = _fhirService.Client;
+            fhirService.Initialize();
+            _fhirClient = fhirService.Client;
         }
 
         /// <summary>

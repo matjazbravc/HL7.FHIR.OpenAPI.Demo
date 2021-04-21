@@ -24,7 +24,7 @@ namespace Hl7.Fhir.OpenAPI.Services
         /// <returns>List of medications</returns>
         public async Task<List<Medication>> GetMedicationDataForPatientAsync(string patientId)
         {
-            List<Medication> result = null;
+            List<Medication> result;
 
             var searchParameters = new SearchParams();
             searchParameters.Parameters.Add(new Tuple<string, string>("patient", patientId));

@@ -22,7 +22,7 @@ namespace Hl7.Fhir.Common.Core.Services
                 TrimOptions = TrimOptions.Trim
             };
             using var csvReader = new CsvReader(reader, csvConfig);
-            var classMap = csvReader.Context.RegisterClassMap<TMap>();
+            csvReader.Context.RegisterClassMap<TMap>();
             var records = csvReader.GetRecords<T>().ToList();
             return records;
         }

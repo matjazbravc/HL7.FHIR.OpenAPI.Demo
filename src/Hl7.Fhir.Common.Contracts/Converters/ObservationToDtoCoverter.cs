@@ -23,16 +23,16 @@ namespace Hl7.Fhir.Common.Contracts.Converters
         {
             _logger.LogDebug(nameof(Convert));
             var coding = observation.Code.Coding.FirstOrDefault();
-            var value = (Quantity)observation.Value;
+            var quantity = (Quantity)observation.Value;
             var effective = (FhirDateTime)observation.Effective;
             var result = new ObservationDto
             {
                 Id = observation.Id,
-                System = coding.System,
-                Code = coding.Code,
+                System = coding?.System,
+                Code = coding?.Code,
                 Name = observation.Code.Text,
-                Unit = value.Code,
-                Value = (decimal)value.Value,
+                Unit = quantity.Code,
+                Value = quantity.Value ?? 0,
                 Effective = effective.ToDateTimeOffset(new TimeSpan(1, 0, 0))
             };
             return result;

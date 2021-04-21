@@ -7,7 +7,6 @@ using Hl7.Fhir.Common.Core.Errors;
 using Hl7.Fhir.Model;
 using Hl7.Fhir.OpenAPI.Controllers.Base;
 using Hl7.Fhir.OpenAPI.Services;
-using Hl7.Fhir.OpenAPI.Validators;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;

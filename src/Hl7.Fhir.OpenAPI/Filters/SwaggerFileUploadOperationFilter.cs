@@ -6,7 +6,7 @@ using System.Linq;
 
 namespace Hl7.Fhir.OpenAPI.Filters
 {
-    public partial class SwaggerFileUploadOperationFilter : IOperationFilter
+    public class SwaggerFileUploadOperationFilter : IOperationFilter
     {
         public void Apply(OpenApiOperation operation, OperationFilterContext context)
         {
@@ -14,7 +14,7 @@ namespace Hl7.Fhir.OpenAPI.Filters
             if (!isFileUploadOperation)
             {
                 return;
-            };
+            }
 
             var uploadFileMediaType = new OpenApiMediaType()
             {

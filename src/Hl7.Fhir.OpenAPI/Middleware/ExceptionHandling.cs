@@ -56,7 +56,7 @@ namespace Hl7.Fhir.OpenAPI.Middleware
             {
                 var fhirEx = (FhirOperationException)ex;
                 var errors = fhirEx.Outcome.Issue.Where(i => i.Severity == Model.OperationOutcome.IssueSeverity.Error);
-                errorMsg = errors.FirstOrDefault().Diagnostics;
+                errorMsg = errors.FirstOrDefault()?.Diagnostics;
                 context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
             }
             var apiError = new ApiError(context.Response.StatusCode, errorMsg, ex.GetType().ToString(), context.Request.Path);

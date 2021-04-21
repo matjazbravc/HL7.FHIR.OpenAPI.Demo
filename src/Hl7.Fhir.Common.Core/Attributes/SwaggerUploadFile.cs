@@ -2,7 +2,7 @@
 
 namespace Hl7.Fhir.Common.Core.Attributes
 {
-    [AttributeUsage(AttributeTargets.Method, Inherited = false, AllowMultiple = false)]
+    [AttributeUsage(AttributeTargets.Method, Inherited = false)]
     public class SwaggerUploadFile : Attribute
     {
         public SwaggerUploadFile(string contentType)

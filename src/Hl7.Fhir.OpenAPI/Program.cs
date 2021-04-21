@@ -36,7 +36,7 @@ namespace Hl7.Fhir.OpenAPI
                 config.AddJsonFile($"appsettings.{env.EnvironmentName}.json", optional: true, reloadOnChange: true);
                 config.AddEnvironmentVariables();
             })
-            .ConfigureLogging((builderContext, logging) =>
+            .ConfigureLogging((_, logging) =>
             {
                 // Clear default logging providers
                 logging.ClearProviders();

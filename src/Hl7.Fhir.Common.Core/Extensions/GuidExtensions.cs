@@ -11,11 +11,7 @@ namespace Hl7.Fhir.Common.Core.Extensions
 
         public static string ToFhirId(this Guid? me)
         {
-            if (me.HasValue)
-            {
-                return me.Value.ToString("n");
-            }
-            return null;
+            return me?.ToString("n");
         }
     }
 }

@@ -5,7 +5,6 @@ using Hl7.Fhir.Common.Contracts.Models;
 using Hl7.Fhir.Model;
 using Hl7.Fhir.Rest;
 using Hl7.Fhir.Validation;
-using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Globalization;
@@ -19,7 +18,6 @@ namespace Hl7.Fhir.OpenAPI.Services
     {
         private readonly ICitizenshipService _citizenshipService;
         private readonly FhirClient _fhirClient;
-        private readonly IFhirService _fhirService;
         private readonly IConverter<PatientCsv, Patient> _patientCsvToPatientConverter;
         private readonly IConverter<PatientDto, Patient> _patientDtoToPatientConverter;
 
@@ -28,12 +26,11 @@ namespace Hl7.Fhir.OpenAPI.Services
             IConverter<PatientCsv, Patient> patientCsvToPatientConverter,
             IConverter<PatientDto, Patient> patientDtoToPatientConverter)
         {
-            _fhirService = fhirService;
             _citizenshipService = citizenshipService;
             _patientCsvToPatientConverter = patientCsvToPatientConverter;
             _patientDtoToPatientConverter = patientDtoToPatientConverter;
-            _fhirService.Initialize();
-            _fhirClient = _fhirService.Client;
+            fhirService.Initialize();
+            _fhirClient = fhirService.Client;
         }
 
         /// <summary>
@@ -61,12 +58,13 @@ namespace Hl7.Fhir.OpenAPI.Services
         /// <returns>Number of created patients</returns>
         public async Task<int> CreatePatientsAsync(IEnumerable<PatientCsv> patientsCsv)
         {
-            if (!patientsCsv.Any())
+            var patientCsvs = patientsCsv.ToList();
+            if (!patientCsvs.Any())
             {
                 return 0;
             }
             var builder = new TransactionBuilder(_fhirClient.Endpoint, Bundle.BundleType.Transaction);
-            foreach (var patientCsv in patientsCsv.Where(p => !string.IsNullOrWhiteSpace(p.Identifier)))
+            foreach (var patientCsv in patientCsvs.Where(p => !string.IsNullOrWhiteSpace(p.Identifier)))
             {
                 var patient = _patientCsvToPatientConverter.Convert(patientCsv);
                 builder.Create(patient);
@@ -83,12 +81,12 @@ namespace Hl7.Fhir.OpenAPI.Services
         public async Task<bool> DeletePatientByIdentifierAsync(string identifier)
         {
             var patient = await SearchByIdentifierAsync(identifier).ConfigureAwait(false);
-            if (patient != null)
+            if (patient == null)
             {
-                await _fhirClient.DeleteAsync(patient).ConfigureAwait(false);
-                return true;
-            };
-            return false;
+                return false;
+            }
+            await _fhirClient.DeleteAsync(patient).ConfigureAwait(false);
+            return true;
         }
 
         /// <summary>
@@ -105,7 +103,7 @@ namespace Hl7.Fhir.OpenAPI.Services
                 if (patient != null)
                 {
                     result.Add(patientCsv);
-                };
+                }
             }
             return result;
         }
@@ -198,9 +196,9 @@ namespace Hl7.Fhir.OpenAPI.Services
                     AdministrativeGender.Unknown;
                 patient.Name = new List<HumanName>
                 {
-                    new HumanName
+                    new()
                     {
-                        Prefix = new string[] {
+                        Prefix = new[] {
                             patientDto.Prefix
                         },
                         Family = patientDto.LastName,
@@ -213,7 +211,7 @@ namespace Hl7.Fhir.OpenAPI.Services
                 patient.BirthDate = patientDto.BirthDate;
                 patient.Address = new List<Address>()
                 {
-                    new Address
+                    new()
                     {
                         City = patientDto.Address.City,
                         Country = patientDto.Address.Country,
@@ -226,8 +224,7 @@ namespace Hl7.Fhir.OpenAPI.Services
                 };
 
                 // BirthPlace
-                var birthPlace = string.Empty;
-                var birthPlaceExtension = patient.Extension.Where(ext => ext.Url.EndsWith("patient-birthPlace")).FirstOrDefault();
+                var birthPlaceExtension = patient.Extension.FirstOrDefault(ext => ext.Url.EndsWith("patient-birthPlace"));
                 if (birthPlaceExtension != null)
                 {
                     ((Address)birthPlaceExtension.Value).City = patientDto.BirthPlace;
@@ -237,14 +234,13 @@ namespace Hl7.Fhir.OpenAPI.Services
                 var citizenship = _citizenshipService.GetCitizenship(patientDto.CitizenshipCode);
                 if (citizenship != null)
                 {
-                    var citizenshipStart = DateTime.ParseExact(citizenship.From, "dd/MM/yyyy", CultureInfo.InvariantCulture);
-                    var citizenshipExtension = patient.Extension.Where(ext => ext.Url.EndsWith("patient-citizenship")).FirstOrDefault();
-                    if (citizenshipExtension != null)
+                    var citizenshipExtension = patient.Extension.FirstOrDefault(ext => ext.Url.EndsWith("patient-citizenship"));
+                    var codeExt = (citizenshipExtension?.Extension)?.FirstOrDefault(ext => ext.Url.Equals("code"));
+                    var citizenshipConcept = (CodeableConcept) codeExt?.Value;
+                    if (citizenshipConcept != null)
                     {
-                        var codeExt = citizenshipExtension.Extension.Where(ext => ext.Url.Equals("code")).FirstOrDefault();
-                        if (codeExt != null)
+                        if (citizenshipConcept.Coding.Any())
                         {
-                            var citizenshipConcept = (CodeableConcept)codeExt.Value;
                             citizenshipConcept.Coding.FirstOrDefault().Display = citizenship.Explanation;
                             citizenshipConcept.Coding.FirstOrDefault().Code = citizenship.Code;
                         }
@@ -252,12 +248,12 @@ namespace Hl7.Fhir.OpenAPI.Services
                 }
 
                 // Before updating the patient to the server, let's validate it first
-                bool success = ValidatePatient(patient);
+                var success = ValidatePatient(patient);
                 if (success)
                 {
                     result = await _fhirClient.UpdateAsync(patient).ConfigureAwait(false);
                 }
-            };
+            }
             return result;
         }
 
@@ -285,20 +281,21 @@ namespace Hl7.Fhir.OpenAPI.Services
         /// <returns>Number of updated patients</returns>
         public async Task<int> UpdatePatientsAsync(IEnumerable<PatientCsv> patientsCsv)
         {
-            if (!patientsCsv.Any())
+            var patientCsvs = patientsCsv.ToList();
+            if (!patientCsvs.Any())
             {
                 return 0;
             }
             var builder = new TransactionBuilder(_fhirClient.Endpoint, Bundle.BundleType.Transaction);
-            foreach (var patientCsv in patientsCsv.Where(p => !string.IsNullOrWhiteSpace(p.Identifier)))
+            foreach (var patientCsv in patientCsvs.Where(p => !string.IsNullOrWhiteSpace(p.Identifier)))
             {
                 var existingPatient = await SearchByIdentifierAsync(patientCsv.Identifier).ConfigureAwait(false);
-                if (existingPatient != null)
+                if (existingPatient == null)
                 {
-                    var updatedPatient = _patientCsvToPatientConverter.Convert(patientCsv);
-                    builder.Update(existingPatient.Id, updatedPatient);
-                };
-
+                    continue;
+                }
+                var updatedPatient = _patientCsvToPatientConverter.Convert(patientCsv);
+                builder.Update(existingPatient.Id, updatedPatient);
             }
             var response = await _fhirClient.TransactionAsync(builder.ToBundle()).ConfigureAwait(false);
             return response.Entry.Count;
