@@ -11,22 +11,21 @@ using Hl7.Fhir.OpenAPI.Services.Options;
 using Hl7.Fhir.OpenAPI.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Versioning;
-using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using System.Collections.Generic;
-using System.Reflection;
 using Microsoft.Extensions.FileProviders;
-using Microsoft.AspNetCore.Http;
+using System.Collections.Generic;
 using System.IO;
+using System.Reflection;
+using Serilog;
 
 namespace Hl7.Fhir.OpenAPI
 {
     public class Startup
     {
         private const string API_NAME = "HL7 FHIR R4 OpenAPI";
-        private const string SWAGGER_ENDPOINT = "/swagger/v1.0/swagger.json";
+        private const string SWAGGER_ENDPOINT = "/swagger/v1/swagger.json";
 
         public Startup(IConfiguration configuration)
         {
@@ -50,6 +49,7 @@ namespace Hl7.Fhir.OpenAPI
             // Configure DI for application services
             RegisterServices(services);
 
+            services.AddCorsPolicy("EnableCORS");
             services.AddControllers()
                 .ConfigureApiBehaviorOptions(options =>
                 {
@@ -63,32 +63,16 @@ namespace Hl7.Fhir.OpenAPI
                     options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore
                 )
                 .AddFluentValidation(fv => fv.RegisterValidatorsFromAssembly(Assembly.GetExecutingAssembly()));
-
-            // Add API Versioning
-            // The default version is 1.0
-            // And we're going to read the version number from the media type
-            // Incoming requests should have a accept header like this: Accept: application/json;v=1.0
-            services.AddApiVersioning(o =>
-            {
-                o.DefaultApiVersion = new ApiVersion(1, 0); // Specify the default api version
-                o.AssumeDefaultVersionWhenUnspecified = true; // Assume that the caller wants the default version if they don't specify
-                o.ApiVersionReader = new MediaTypeApiVersionReader(); // Read the version number from the accept header
-                o.ReportApiVersions = true; // Return Api version in response header
-            });
-
-            // Configure Swagger support
-            services.ConfigureSwagger(API_NAME);
-
-            // Configure CORS
-            services.AddCorsPolicy("EnableCORS");
+            services.AddApiVersioningExtension();
+            services.AddSwaggerExtension(API_NAME);
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
             // Need for a ReDoc logo
-            var logoFilePath = "Resources/Images";
-            PhysicalFileProvider fileprovider = new PhysicalFileProvider(Path.Combine(env.ContentRootPath, logoFilePath));
-            var requestPath = new PathString($"/{logoFilePath}");
+            const string LOGO_FILE_PATH = "Resources/Images";
+            var fileprovider = new PhysicalFileProvider(Path.Combine(env.ContentRootPath, LOGO_FILE_PATH));
+            var requestPath = new PathString($"/{LOGO_FILE_PATH}");
             app.UseDefaultFiles(new DefaultFilesOptions
             {
                 FileProvider = fileprovider,
@@ -113,31 +97,34 @@ namespace Hl7.Fhir.OpenAPI
                 sa.SpecUrl = SWAGGER_ENDPOINT;
             });
 
-            // Swagger
-            app.UseSwagger();
+            app.UseExceptionHandler("/Error");
+            // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
+            app.UseHsts();
 
-            // Swagger UI
-            // https://docs.microsoft.com/en-us/aspnet/core/tutorials/getting-started-with-swashbuckle?view=aspnetcore-3.1&tabs=visual-studio
-            app.UseSwaggerUI(c =>
-            {
-                c.SwaggerEndpoint(SWAGGER_ENDPOINT, $"{API_NAME} v1.0");
-                c.RoutePrefix = string.Empty;
-            });
+            // For elevated security, it is recommended to remove this middleware and set your server to only listen on https. 
+            // A slightly less secure option would be to redirect http to 400, 505, etc.
+            app.UseHttpsRedirection();
 
-            app.UseRouting();
             app.UseCors("EnableCORS");
-            app.UseAuthentication();
 
+            app.UseSerilogRequestLogging();
+            app.UseRouting();
+
+            app.UseAuthentication();
+            app.UseAuthorization();
+
+            app.UseErrorHandlingMiddleware();
+            
             // Request/Response logging middleware
             app.UseApiLogging();
-
-            // Global Exception handling middleware
-            app.UseGlobalExceptionHandling();
-
+            
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
             });
+
+            // Dynamic App
+            app.UseSwaggerExtension();
 
             // Load Citizenship list from CSV file to be a global available
             InitializeCitizenshipService(app);
@@ -157,7 +144,7 @@ namespace Hl7.Fhir.OpenAPI
         {
             // Register middlewares
             services.AddTransient<ApiLogging>();
-            services.AddTransient<ExceptionHandling>();
+            services.AddTransient<ErrorHandlerMiddleware>();
 
             // Services
             services.AddTransient<ICsvConverter, CsvConverter>();

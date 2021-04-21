@@ -11,13 +11,13 @@ using System;
 namespace Hl7.Fhir.OpenAPI.Middleware
 {
     /// <summary>
-    /// Global Exception Handling Middleware
+    /// Global Error Handling Middleware
     /// </summary>
-    public class ExceptionHandling : IMiddleware
+    public class ErrorHandlerMiddleware : IMiddleware
     {
         private readonly ILogger _logger;
 
-        public ExceptionHandling(ILoggerFactory loggerFactory)
+        public ErrorHandlerMiddleware(ILoggerFactory loggerFactory)
         {
             _logger = loggerFactory.CreateLogger<ApiLogging>();
         }

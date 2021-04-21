@@ -1,7 +1,4 @@
 ﻿using Hl7.Fhir.OpenAPI.Filters;
-using Hl7.Fhir.OpenAPI.Middleware;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Mvc.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.PlatformAbstractions;
 using Microsoft.OpenApi.Any;
@@ -12,32 +9,50 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Hl7.Fhir.OpenAPI.Extensions
 {
     public static class ServiceExtensions
     {
-        // More info: https://docs.microsoft.com/en-us/aspnet/core/security/cors?view=aspnetcore-3.1
-        public static void AddCorsPolicy(this IServiceCollection serviceCollection, string corsPolicyName)
+        // Add API Versioning
+        // The default version is 1.0
+        // And we're going to read the version number from the media type
+        // Incoming requests should have a accept header like this: Accept: application/json;v=1.0
+        public static void AddApiVersioningExtension(this IServiceCollection services)
         {
-            serviceCollection.AddCors(options =>
+            services.AddApiVersioning(config =>
             {
-                options.AddPolicy(corsPolicyName,
-                    builder => builder
-                        .AllowAnyOrigin()
-                        .AllowAnyMethod()
-                        .AllowAnyHeader());
+                // Default API Version
+                config.DefaultApiVersion = new ApiVersion(1, 0);
+                // use default version when version is not specified
+                config.AssumeDefaultVersionWhenUnspecified = true;
+                // Advertise the API versions supported for the particular endpoint
+                config.ReportApiVersions = true;
             });
         }
 
-        public static void ConfigureSwagger(this IServiceCollection services, string apiName, bool includeXmlDocumentation = true)
+        // More info: https://docs.microsoft.com/en-us/aspnet/core/security/cors?view=aspnetcore-3.1
+        public static void AddCorsPolicy(this IServiceCollection services, string policyName)
+        {
+            services.AddCors(options =>
+            {
+                options.AddPolicy(policyName,
+                    builder => builder.AllowAnyOrigin()
+                        .AllowAnyMethod()
+                        .AllowAnyHeader()
+                        .WithExposedHeaders("X-Pagination"));
+            });
+        }
+
+        public static void AddSwaggerExtension(this IServiceCollection services, string apiName)
         {
             services.AddSwaggerGen(options =>
             {
-                options.SwaggerDoc("v1.0", new OpenApiInfo
+                options.SwaggerDoc("v1", new OpenApiInfo
                 {
                     Title = apiName,
-                    Version = "v1.0",
+                    Version = "v1",
                     Description = "OpenAPI demo for custom EHR integration with FHIR server.<br>**NOTE: NOT ALL RESOURCES HAVE BEEN IMPLEMENTED!",
                     Contact = new OpenApiContact
                     {
@@ -63,33 +78,14 @@ namespace Hl7.Fhir.OpenAPI.Extensions
                     }
                 });
                 options.OperationFilter<SwaggerFileUploadOperationFilter>();
-                options.DocInclusionPredicate((docName, apiDesc) =>
+                var xmlDocFile = Path.Combine(PlatformServices.Default.Application.ApplicationBasePath, $"{Assembly.GetExecutingAssembly().GetName().Name}.xml");
+                if (File.Exists(xmlDocFile))
                 {
-                    var actionApiVersionModel = apiDesc.ActionDescriptor.GetApiVersionModel();
-                    // Would mean this action is unversioned and should be included everywhere
-                    return actionApiVersionModel.DeclaredApiVersions.Any() ? actionApiVersionModel.DeclaredApiVersions.Any(v => $"v{v}" == docName) : actionApiVersionModel.ImplementedApiVersions.Any(v => $"v{v.ToString()}" == docName);
-                });
-                if (includeXmlDocumentation)
-                {
-                    var xmlDocFile = Path.Combine(PlatformServices.Default.Application.ApplicationBasePath, $"{Assembly.GetExecutingAssembly().GetName().Name}.xml");
-                    if (File.Exists(xmlDocFile))
-                    {
-                        options.IncludeXmlComments(xmlDocFile);
-                    }
+                    options.IncludeXmlComments(xmlDocFile);
                 }
                 options.DescribeAllParametersInCamelCase();
                 options.ResolveConflictingActions(apiDescriptions => apiDescriptions.First());
             });
-        }
-
-        public static IApplicationBuilder UseApiLogging(this IApplicationBuilder builder)
-        {
-            return builder.UseMiddleware<ApiLogging>();
-        }
-
-        public static IApplicationBuilder UseGlobalExceptionHandling(this IApplicationBuilder builder)
-        {
-            return builder.UseMiddleware<ExceptionHandling>();
         }
     }
 }
