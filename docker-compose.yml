@@ -1,0 +1,13 @@
+version: '3.9'
+
+services:
+  hl7.fhir.openapi:
+    container_name: HL7.FHIR.OpenAPI
+    image: ${DOCKER_REGISTRY-}hl7fhiropenapi
+    restart: on-failure
+    hostname: HL7.FHIR.OpenAPI
+    build:
+      context: .
+      dockerfile: src/Hl7.Fhir.OpenAPI/Dockerfile
+    volumes:
+      - "./csv-files:/Resources/Files"
