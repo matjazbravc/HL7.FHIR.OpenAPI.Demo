@@ -123,7 +123,6 @@ namespace Hl7.Fhir.OpenAPI
                 endpoints.MapControllers();
             });
 
-            // Dynamic App
             app.UseSwaggerExtension();
 
             // Load Citizenship list from CSV file to be a global available
